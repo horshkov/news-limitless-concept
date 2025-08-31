@@ -1,0 +1,22 @@
+{
+  "name": "news-limitless-concept",
+  "version": "1.0.0",
+  "description": "News Limitless Concept - A modern news aggregation platform",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "news",
+    "limitless",
+    "concept"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2"
+  }
+}
