@@ -177,9 +177,13 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Open http://localhost:${PORT} in your browser`);
+    if (process.env.RAILWAY_ENVIRONMENT) {
+        console.log(`Railway deployment active`);
+    } else {
+        console.log(`Open http://localhost:${PORT} in your browser`);
+    }
     
     // Initialize Twitter token on startup
     getTwitterBearerToken();
