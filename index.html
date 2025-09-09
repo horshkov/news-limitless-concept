@@ -1041,8 +1041,11 @@
             }
         }
         
-        // Initialize with cached tweets
+        // Initialize with cached tweets immediately
         bitcoinTweets = loadCachedTweets();
+        if (bitcoinTweets.length > 0) {
+            console.log('🚀 Initialized with', bitcoinTweets.length, 'cached real tweets');
+        }
         
         async function fetchBitcoinTweets() {
             try {
@@ -1069,21 +1072,23 @@
                     
                     // Check if these are real tweets (not mock data)
                     const firstTweet = processedTweets[0];
-                    if (firstTweet && !firstTweet.id.startsWith('mock_')) {
+                    const isMockData = firstTweet && (firstTweet.id.startsWith('mock_') || firstTweet.isMockData);
+                    
+                    if (!isMockData && firstTweet) {
                         // These are real tweets, save them
                         bitcoinTweets = processedTweets;
                         saveTweetsToCache(bitcoinTweets);
-                        console.log('Using fresh real tweets from API');
+                        console.log('✅ Fetched and saved fresh real tweets from API');
                     } else {
-                        // These are mock tweets from server, use cached real tweets if available
+                        // Server returned mock data, prioritize cached real tweets
                         const cached = loadCachedTweets();
                         if (cached.length > 0) {
                             bitcoinTweets = cached;
-                            console.log('API returned mock data, using cached real tweets instead');
+                            console.log('📦 Using cached real tweets (API returned mock data)');
                         } else {
-                            // No cached tweets available, use the mock data as last resort
+                            // Only use mock data if absolutely no cached tweets exist
                             bitcoinTweets = processedTweets;
-                            console.log('No cached tweets available, using mock data');
+                            console.log('⚠️ No cached tweets available, using mock data as last resort');
                         }
                     }
                 } else {
@@ -1437,9 +1442,11 @@
         }
         
         function getMockTweets() {
+            console.log('⚠️ getMockTweets called - should only happen if no cached data exists');
             return [
                 {
-                    id: '1',
+                    id: 'client_mock_1',
+                    isMockData: true,
                     text: 'Bitcoin is showing strong momentum today! $BTC breaking through resistance levels 🚀 The institutional adoption continues to accelerate.',
                     created_at: new Date().toISOString(),
                     author_id: 'mock_user_1',
@@ -1457,7 +1464,8 @@
                     }
                 },
                 {
-                    id: '2',
+                    id: 'client_mock_2',
+                    isMockData: true,
                     text: 'Institutional adoption of #Bitcoin continues to grow. Major banks now offering BTC custody services. This is the beginning of mass adoption.',
                     created_at: new Date(Date.now() - 3600000).toISOString(),
                     author_id: 'mock_user_2',
@@ -1475,7 +1483,8 @@
                     }
                 },
                 {
-                    id: '3',
+                    id: 'client_mock_3',
+                    isMockData: true,
                     text: 'BTC price analysis: Key support at $107k holding strong. Next target $110k if we break above current resistance. Chart looking bullish! 📈',
                     created_at: new Date(Date.now() - 7200000).toISOString(),
                     author_id: 'mock_user_3',
@@ -1493,7 +1502,8 @@
                     }
                 },
                 {
-                    id: '4',
+                    id: 'client_mock_4',
+                    isMockData: true,
                     text: 'Just added more $BTC to my portfolio. The fundamentals have never been stronger. Network hash rate at ATH, Lightning Network growing exponentially.',
                     created_at: new Date(Date.now() - 10800000).toISOString(),
                     author_id: 'mock_user_4',
@@ -1511,7 +1521,8 @@
                     }
                 },
                 {
-                    id: '5',
+                    id: 'client_mock_5',
+                    isMockData: true,
                     text: 'Bitcoin mining difficulty just adjusted +5%. Network security stronger than ever. #BTC remains the most secure blockchain in existence.',
                     created_at: new Date(Date.now() - 14400000).toISOString(),
                     author_id: 'mock_user_5',

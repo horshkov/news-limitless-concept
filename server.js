@@ -129,11 +129,12 @@ app.get('/api/twitter/search', async (req, res) => {
     }
 });
 
-// Mock tweets for testing/fallback
+// Mock tweets for testing/fallback - clearly marked as mock
 function getMockTweets() {
     return [
         {
             id: 'mock_1',
+            isMockData: true,
             text: 'Bitcoin is showing strong momentum today! $BTC breaking through resistance levels 🚀',
             created_at: new Date().toISOString(),
             author_id: 'mock_user_1',
@@ -146,6 +147,7 @@ function getMockTweets() {
         },
         {
             id: 'mock_2',
+            isMockData: true,
             text: 'Institutional adoption of #Bitcoin continues to grow. Major banks now offering BTC custody services.',
             created_at: new Date(Date.now() - 3600000).toISOString(),
             author_id: 'mock_user_2',
@@ -158,6 +160,7 @@ function getMockTweets() {
         },
         {
             id: 'mock_3',
+            isMockData: true,
             text: 'BTC price analysis: Key support at $107k holding strong. Next target $110k if we break above current resistance.',
             created_at: new Date(Date.now() - 7200000).toISOString(),
             author_id: 'mock_user_3',
