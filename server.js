@@ -4,7 +4,9 @@ const path = require('path');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Railway sometimes needs explicit PORT handling
+const PORT = process.env.PORT || process.env.RAILWAY_TCP_PROXY_PORT || 3000;
+console.log('Starting server with PORT configuration:', PORT);
 
 // Twitter Bearer Token - use the provided one directly
 let twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
