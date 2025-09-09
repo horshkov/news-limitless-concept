@@ -1009,16 +1009,48 @@
         let lastFeedUpdate = 0;
         let currentFilter = 'all';
         
+        // Check if localStorage is available
+        function isLocalStorageAvailable() {
+            try {
+                const test = '__localStorage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                console.warn('localStorage not available:', e);
+                return false;
+            }
+        }
+        
         // Load cached tweets from localStorage on page load
         function loadCachedTweets() {
+            if (!isLocalStorageAvailable()) {
+                console.warn('localStorage not available, cannot load cached tweets');
+                return [];
+            }
+            
             try {
                 const cached = localStorage.getItem('bitcoinTweetsCache');
                 if (cached) {
                     const parsedCache = JSON.parse(cached);
                     if (parsedCache && parsedCache.tweets && parsedCache.tweets.length > 0) {
-                        console.log(`Loaded ${parsedCache.tweets.length} cached tweets from ${new Date(parsedCache.timestamp).toLocaleString()}`);
+                        const age = Date.now() - parsedCache.timestamp;
+                        const ageMinutes = Math.floor(age / 60000);
+                        console.log(`📦 Loaded ${parsedCache.tweets.length} cached tweets (${ageMinutes} minutes old)`);
+                        
+                        // Log first tweet to verify it's real
+                        if (parsedCache.tweets[0]) {
+                            console.log('First cached tweet:', {
+                                id: parsedCache.tweets[0].id,
+                                text: parsedCache.tweets[0].text?.substring(0, 50) + '...',
+                                isMockData: parsedCache.tweets[0].isMockData
+                            });
+                        }
+                        
                         return parsedCache.tweets;
                     }
+                } else {
+                    console.log('No cached tweets found in localStorage');
                 }
             } catch (error) {
                 console.error('Error loading cached tweets:', error);
@@ -1028,13 +1060,31 @@
         
         // Save tweets to localStorage
         function saveTweetsToCache(tweets) {
+            if (!isLocalStorageAvailable()) {
+                console.warn('localStorage not available, cannot save tweets');
+                return;
+            }
+            
             try {
                 if (tweets && tweets.length > 0) {
-                    localStorage.setItem('bitcoinTweetsCache', JSON.stringify({
-                        tweets: tweets,
-                        timestamp: Date.now()
-                    }));
-                    console.log(`Saved ${tweets.length} tweets to cache`);
+                    // Filter out any mock tweets before saving
+                    const realTweets = tweets.filter(t => !t.isMockData && !t.id.startsWith('mock_') && !t.id.startsWith('client_mock_'));
+                    
+                    if (realTweets.length > 0) {
+                        localStorage.setItem('bitcoinTweetsCache', JSON.stringify({
+                            tweets: realTweets,
+                            timestamp: Date.now()
+                        }));
+                        console.log(`💾 Saved ${realTweets.length} real tweets to cache`);
+                        
+                        // Verify save worked
+                        const verification = localStorage.getItem('bitcoinTweetsCache');
+                        if (verification) {
+                            console.log('✅ Cache save verified');
+                        }
+                    } else {
+                        console.log('⚠️ No real tweets to save (all were mock data)');
+                    }
                 }
             } catch (error) {
                 console.error('Error saving tweets to cache:', error);
@@ -1054,9 +1104,43 @@
                 const data = await response.json();
                 
                 if (data.data && data.data.length > 0) {
-                    console.log(`Fetched ${data.data.length} real tweets from API`);
+                    console.log(`Fetched ${data.data.length} tweets from API`);
                     
-                    // Map user data if available
+                    // Check if these are mock tweets first (before processing)
+                    const firstTweet = data.data[0];
+                    const isMockData = firstTweet && (firstTweet.id.startsWith('mock_') || firstTweet.isMockData === true);
+                    
+                    if (isMockData) {
+                        console.log('🚫 API returned mock data');
+                        // Server returned mock data, prioritize cached real tweets
+                        const cached = loadCachedTweets();
+                        if (cached.length > 0) {
+                            bitcoinTweets = cached;
+                            console.log('📦 Using', cached.length, 'cached real tweets instead of mock data');
+                            return; // Exit early, don't process mock data
+                        } else {
+                            console.log('⚠️ No cached tweets available, will use mock data as last resort');
+                            // Process mock tweets to add author info if missing
+                            let processedTweets = data.data.map(tweet => {
+                                if (!tweet.author) {
+                                    return {
+                                        ...tweet,
+                                        author: { 
+                                            username: 'mock_user', 
+                                            name: 'Mock User',
+                                            profile_image_url: null
+                                        }
+                                    };
+                                }
+                                return tweet;
+                            });
+                            bitcoinTweets = processedTweets;
+                            return;
+                        }
+                    }
+                    
+                    // Process real tweets
+                    console.log('✅ Processing real tweets from API');
                     let processedTweets = data.data;
                     if (data.includes && data.includes.users) {
                         const userMap = {};
@@ -1070,34 +1154,20 @@
                         }));
                     }
                     
-                    // Check if these are real tweets (not mock data)
-                    const firstTweet = processedTweets[0];
-                    const isMockData = firstTweet && (firstTweet.id.startsWith('mock_') || firstTweet.isMockData);
+                    // Save real tweets
+                    bitcoinTweets = processedTweets;
+                    saveTweetsToCache(bitcoinTweets);
+                    console.log('💾 Saved', bitcoinTweets.length, 'fresh real tweets to cache');
                     
-                    if (!isMockData && firstTweet) {
-                        // These are real tweets, save them
-                        bitcoinTweets = processedTweets;
-                        saveTweetsToCache(bitcoinTweets);
-                        console.log('✅ Fetched and saved fresh real tweets from API');
-                    } else {
-                        // Server returned mock data, prioritize cached real tweets
-                        const cached = loadCachedTweets();
-                        if (cached.length > 0) {
-                            bitcoinTweets = cached;
-                            console.log('📦 Using cached real tweets (API returned mock data)');
-                        } else {
-                            // Only use mock data if absolutely no cached tweets exist
-                            bitcoinTweets = processedTweets;
-                            console.log('⚠️ No cached tweets available, using mock data as last resort');
-                        }
-                    }
                 } else {
                     console.log('No tweets in response, using cached data');
                     const cached = loadCachedTweets();
                     if (cached.length > 0) {
                         bitcoinTweets = cached;
+                        console.log('📦 Using', cached.length, 'cached tweets');
                     } else {
                         bitcoinTweets = []; // Will use mock tweets in display only if no cache
+                        console.log('⚠️ No cached tweets, empty response');
                     }
                 }
             } catch (error) {
@@ -1106,9 +1176,10 @@
                 const cached = loadCachedTweets();
                 if (cached.length > 0) {
                     bitcoinTweets = cached;
-                    console.log('Using cached tweets due to fetch error');
+                    console.log('📦 Using', cached.length, 'cached tweets due to fetch error');
                 } else {
                     bitcoinTweets = [];
+                    console.log('⚠️ No cached tweets available after fetch error');
                 }
             }
         }
@@ -1742,8 +1813,45 @@
             });
         });
         
+        // Debug function to check cache status (can be called from console)
+        window.debugTweetCache = function() {
+            console.log('=== TWEET CACHE DEBUG ===');
+            console.log('localStorage available:', isLocalStorageAvailable());
+            
+            const cached = localStorage.getItem('bitcoinTweetsCache');
+            if (cached) {
+                try {
+                    const parsedCache = JSON.parse(cached);
+                    console.log('Cache exists with', parsedCache.tweets?.length || 0, 'tweets');
+                    console.log('Cache timestamp:', new Date(parsedCache.timestamp).toLocaleString());
+                    console.log('Cache age:', Math.floor((Date.now() - parsedCache.timestamp) / 60000), 'minutes');
+                    
+                    if (parsedCache.tweets && parsedCache.tweets.length > 0) {
+                        console.log('Sample tweets:');
+                        parsedCache.tweets.slice(0, 3).forEach((tweet, i) => {
+                            console.log(`  ${i+1}. ID: ${tweet.id}, Mock: ${tweet.isMockData || false}`);
+                            console.log(`     Text: ${tweet.text?.substring(0, 60)}...`);
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error parsing cache:', e);
+                }
+            } else {
+                console.log('No cache found in localStorage');
+            }
+            
+            console.log('Current bitcoinTweets array:', bitcoinTweets.length, 'tweets');
+            if (bitcoinTweets.length > 0) {
+                console.log('First tweet in memory:', {
+                    id: bitcoinTweets[0].id,
+                    isMockData: bitcoinTweets[0].isMockData
+                });
+            }
+        };
+        
         // Initial load
         console.log('=== INITIAL PAGE LOAD ===');
+        console.log('localStorage status:', isLocalStorageAvailable() ? 'Available' : 'Not available');
         fetchBTCPrice(true); // Force initial historical fetch
         console.log('Calling fetchBitcoinMarkets...');
         fetchBitcoinMarkets(true); // Pass true for initial load
