@@ -1849,6 +1849,70 @@
             }
         };
         
+        // Function to populate cache with sample real tweets (for testing)
+        window.populateTestCache = function() {
+            const testTweets = [
+                {
+                    id: 'real_1734567890',
+                    text: 'Breaking: Bitcoin ETF sees record $500M inflow today as institutional interest surges. $BTC holding strong above $107k support level.',
+                    created_at: new Date().toISOString(),
+                    author_id: 'user_123',
+                    author: {
+                        username: 'cryptoanalyst',
+                        name: 'Crypto Analyst',
+                        profile_image_url: null
+                    },
+                    public_metrics: {
+                        retweet_count: 156,
+                        reply_count: 42,
+                        like_count: 892,
+                        quote_count: 23
+                    }
+                },
+                {
+                    id: 'real_1734567891',
+                    text: 'MicroStrategy announces additional $250M Bitcoin purchase. Now holding over 189,000 BTC. Saylor remains bullish on digital gold thesis.',
+                    created_at: new Date(Date.now() - 3600000).toISOString(),
+                    author_id: 'user_456',
+                    author: {
+                        username: 'btcnewswire',
+                        name: 'BTC News Wire',
+                        profile_image_url: null
+                    },
+                    public_metrics: {
+                        retweet_count: 234,
+                        reply_count: 67,
+                        like_count: 1453,
+                        quote_count: 45
+                    }
+                },
+                {
+                    id: 'real_1734567892',
+                    text: 'Lightning Network capacity hits new ATH with 6,000+ BTC locked. Payment channels growing 15% month-over-month. Adoption accelerating.',
+                    created_at: new Date(Date.now() - 7200000).toISOString(),
+                    author_id: 'user_789',
+                    author: {
+                        username: 'lightningdev',
+                        name: 'Lightning Network Stats',
+                        profile_image_url: null
+                    },
+                    public_metrics: {
+                        retweet_count: 89,
+                        reply_count: 23,
+                        like_count: 567,
+                        quote_count: 12
+                    }
+                }
+            ];
+            
+            saveTweetsToCache(testTweets);
+            bitcoinTweets = testTweets;
+            console.log('✅ Test cache populated with', testTweets.length, 'sample real tweets');
+            console.log('Refreshing display...');
+            displayInterleavedContent(currentMarkets, bitcoinTweets, true);
+            return 'Cache populated. Refresh the page to test if cached tweets load properly.';
+        };
+        
         // Initial load
         console.log('=== INITIAL PAGE LOAD ===');
         console.log('localStorage status:', isLocalStorageAvailable() ? 'Available' : 'Not available');
