@@ -1106,9 +1106,22 @@
                 if (data.data && data.data.length > 0) {
                     console.log(`Fetched ${data.data.length} tweets from API`);
                     
+                    // Check if these are stored tweets from the server database
+                    const isStoredData = data.isStoredData === true;
+                    
                     // Check if these are mock tweets first (before processing)
                     const firstTweet = data.data[0];
-                    const isMockData = firstTweet && (firstTweet.id.startsWith('mock_') || firstTweet.isMockData === true);
+                    const isMockData = !isStoredData && firstTweet && (firstTweet.id.startsWith('mock_') || firstTweet.isMockData === true);
+                    
+                    if (isStoredData) {
+                        console.log('📚 API returned stored tweets from server database');
+                        // Process stored tweets (they already have author info)
+                        bitcoinTweets = data.data;
+                        // Also save to local cache for offline use
+                        saveTweetsToCache(bitcoinTweets);
+                        console.log(`✅ Using ${bitcoinTweets.length} stored tweets from server`);
+                        return;
+                    }
                     
                     if (isMockData) {
                         console.log('🚫 API returned mock data');

@@ -4,3 +4,4 @@ node_modules/
 .env
 dist/
 .cache/
+tweets_database.json
