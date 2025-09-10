@@ -799,7 +799,7 @@
                     const startTime = endTime - 3600; // 1 hour ago
                     
                     // Fetch historical data
-                    const historicalResponse = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&startTime=${startTime * 1000}&endTime=${endTime * 1000}&limit=60`);
+                    const historicalResponse = await fetch(`/api/binance/klines?symbol=BTCUSDT&interval=1m&startTime=${startTime * 1000}&endTime=${endTime * 1000}&limit=60`);
                     
                     if (historicalResponse.ok) {
                         const klines = await historicalResponse.json();
@@ -815,7 +815,7 @@
                     }
                 } else {
                     // Just fetch the latest price
-                    const tickerResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+                    const tickerResponse = await fetch('/api/binance/ticker?symbol=BTCUSDT');
                     
                     if (tickerResponse.ok) {
                         const ticker = await tickerResponse.json();

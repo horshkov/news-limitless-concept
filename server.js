@@ -76,6 +76,43 @@ async function getTwitterBearerToken() {
     }
 }
 
+// Binance API proxy endpoints
+app.get('/api/binance/klines', async (req, res) => {
+    try {
+        const { symbol, interval, startTime, endTime, limit } = req.query;
+        const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&endTime=${endTime}&limit=${limit}`;
+        
+        console.log('Proxying Binance klines request');
+        
+        const response = await fetch(binanceUrl);
+        const data = await response.json();
+        
+        res.json(data);
+    } catch (error) {
+        console.error('Binance klines proxy error:', error);
+        // Return empty array as fallback
+        res.json([]);
+    }
+});
+
+app.get('/api/binance/ticker', async (req, res) => {
+    try {
+        const { symbol } = req.query;
+        const binanceUrl = `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`;
+        
+        console.log('Proxying Binance ticker request');
+        
+        const response = await fetch(binanceUrl);
+        const data = await response.json();
+        
+        res.json(data);
+    } catch (error) {
+        console.error('Binance ticker proxy error:', error);
+        // Return fallback BTC price
+        res.json({ symbol: 'BTCUSDT', price: '107000.00' });
+    }
+});
+
 // Twitter API proxy endpoint
 app.get('/api/twitter/search', async (req, res) => {
     try {
