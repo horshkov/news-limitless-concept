@@ -236,6 +236,13 @@
             padding: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             border: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .market-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
         }
         
         .market-question {
@@ -244,6 +251,27 @@
             color: #0f1419;
             line-height: 1.4;
             margin-bottom: 12px;
+            display: flex;
+            align-items: start;
+            justify-content: space-between;
+        }
+        
+        .market-question-text {
+            flex: 1;
+            margin-right: 8px;
+        }
+        
+        .market-external-link {
+            color: #999;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .market-card:hover .market-external-link {
+            opacity: 1;
         }
         
         .market-meta {
@@ -1630,6 +1658,40 @@
             const card = document.createElement('div');
             card.className = 'market-card';
             
+            // Add click handler to open market on Limitless Exchange
+            card.addEventListener('click', (e) => {
+                // Prevent opening if clicking on YES/NO buttons
+                if (e.target.classList.contains('market-btn')) {
+                    e.stopPropagation();
+                    return;
+                }
+                
+                // Construct Limitless Exchange URL
+                // Log available fields for debugging (remove this after testing)
+                console.log('Market object fields:', Object.keys(market));
+                
+                // Markets typically have either slug, id, or marketId
+                let marketUrl;
+                
+                if (market.slug) {
+                    marketUrl = `https://limitless.exchange/markets/${market.slug}`;
+                } else if (market.marketId) {
+                    marketUrl = `https://limitless.exchange/markets/${market.marketId}`;
+                } else if (market.id) {
+                    marketUrl = `https://limitless.exchange/markets/${market.id}`;
+                } else if (market.address) {
+                    // Some markets use contract address as identifier
+                    marketUrl = `https://limitless.exchange/markets/${market.address}`;
+                } else {
+                    // Fallback: search for the market title
+                    const searchQuery = encodeURIComponent(market.title || market.question || '');
+                    marketUrl = `https://limitless.exchange/search?q=${searchQuery}`;
+                }
+                
+                console.log('Opening market:', marketUrl);
+                window.open(marketUrl, '_blank');
+            });
+            
             // Calculate sentiment from prices array or other fields
             let yesPercentage, noPercentage;
             
@@ -1675,7 +1737,12 @@
             
             card.innerHTML = `
                 <div class="market-question">
-                    ${displayTitle}
+                    <span class="market-question-text">${displayTitle}</span>
+                    <svg class="market-external-link" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
                 </div>
                 
                 <div class="market-meta">
@@ -1695,6 +1762,9 @@
                     <button class="market-btn no-btn">NO</button>
                 </div>
             `;
+            
+            // Add title attribute for tooltip
+            card.title = 'Click to view on Limitless Exchange';
             
             return card;
         }
